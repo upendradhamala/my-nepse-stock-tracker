@@ -1,0 +1,15 @@
+{
+  "name": "nepse-alert",
+  "version": "1.0.0",
+  "description": "Monitors NEPSE for IPO openings and price conditions, then alerts you so you can place the order yourself.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:local": "node --env-file=.env src/index.js",
+    "watchlist:secret": "node --env-file=.env scripts/printWatchlist.js"
+  },
+  "dependencies": {
+    "node-notifier": "^10.0.1"
+  }
+}

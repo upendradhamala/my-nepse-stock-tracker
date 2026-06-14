@@ -1,0 +1,30 @@
+{
+  "pollSeconds": 30,
+
+  "_comment_dataSource": "Use 'mock' to test the alert pipeline immediately. Switch to 'live' and set liveBaseUrl to a PUBLIC NEPSE JSON source (sharesansar / merolagani / NEPSE proxy you trust).",
+  "dataSource": "live",
+  "liveBaseUrl": "https://chukul.com",
+  "_comment_livePaths": "Endpoint paths under liveBaseUrl. chukul.com serves live prices (verified, no auth). It has no public IPO feed, so new-IPO alerts stay off until an IPO source is wired; price alerts work fully. The prices feed is required in live mode; the IPO feed is best-effort.",
+  "livePaths": {
+    "prices": "/api/data/v2/live-market/",
+    "ipos": "/api/data/v2/ipo/"
+  },
+
+  "alertOnNewIpo": true,
+
+  "_comment_renotifyMinutes": "While a price stays past its bound, re-remind every N minutes. Set 0 to alert only once per crossing.",
+  "renotifyMinutes": 30,
+
+
+  "_comment_priceWatch": "Your REAL watchlist comes from the PRICE_WATCH env var (GitHub Secret in deploy, .env locally) so it stays private in a public repo. The entries below are only a non-sensitive example/fallback. Each entry can set a lower bound (below), an upper bound (above), or both.",
+  "priceWatch": [
+    { "symbol": "EXAMPLE", "below": 100, "above": 200 }
+  ],
+
+  "_comment_telegram": "Secrets are read from env vars TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID (see .env locally, GitHub Secrets in deploy). Leave these as placeholders — do NOT commit a real token here.",
+  "telegram": {
+    "enabled": true,
+    "botToken": "PUT_YOUR_BOT_TOKEN_HERE",
+    "chatId": "PUT_YOUR_CHAT_ID_HERE"
+  }
+}

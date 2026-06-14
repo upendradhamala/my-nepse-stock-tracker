@@ -1,0 +1,68 @@
+name: NEPSE Alert
+
+# Runs a single poll on a schedule and pushes Telegram alerts.
+# NEPSE trades Sun-Thu ~11:00-15:00 NPT. NPT is UTC+5:45, so that window is
+# ~05:15-09:15 UTC. We run every 5 min across 05:00-09:55 UTC on Sun-Thu
+# (a little padding on each side is harmless). Cron is always UTC.
+on:
+  schedule:
+    - cron: "*/5 5-9 * * 0,1,2,3,4"
+  workflow_dispatch: {} # lets you trigger a test run manually from the Actions tab
+
+# Avoid overlapping runs if one is slow.
+concurrency:
+  group: nepse-alert
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - run: npm ci --omit=dev || npm install --omit=dev
+
+      # Restore the dedup state saved by the previous run so we don't re-alert
+      # every 5 minutes while a price stays past its threshold.
+      - name: Restore alert state
+        uses: actions/cache/restore@v4
+        with:
+          path: .state.json
+          key: nepse-state-${{ github.run_id }}
+          restore-keys: |
+            nepse-state-
+
+      - name: Poll NEPSE and alert
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PRICE_WATCH: ${{ secrets.PRICE_WATCH }}
+        run: node src/runOnce.js
+
+      # Save the updated state under a unique key (run_id), so next run's
+      # restore-keys prefix match picks up this newest copy.
+      - name: Save alert state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .state.json
+          key: nepse-state-${{ github.run_id }}
+
+      # Silent-failure guard: if any step above failed (data source down, node
+      # crash, etc.), ping Telegram so you know alerts aren't flowing.
+      - name: Notify on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -sS --max-time 15 \
+            "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            -d chat_id="${CHAT}" \
+            --data-urlencode "text=⚠️ NEPSE Alert run failed — alerts may not be flowing. See: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            > /dev/null || true

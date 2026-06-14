@@ -1,0 +1,14 @@
+# dependencies
+node_modules/
+
+# local runtime / secrets
+.env
+*.log
+.state.json
+
+# local AI context — keep private
+CLAUDE.md
+
+# OS
+.DS_Store
+
