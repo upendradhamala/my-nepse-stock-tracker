@@ -4,9 +4,13 @@ name: NEPSE Alert
 # NEPSE trades Sun-Thu ~11:00-15:00 NPT. NPT is UTC+5:45, so that window is
 # ~05:15-09:15 UTC. We run every 5 min across 05:00-09:55 UTC on Sun-Thu
 # (a little padding on each side is harmless). Cron is always UTC.
+#
+# Minutes are offset to :02,:07,:12,... instead of :00,:05,:10. GitHub's cron
+# is best-effort and the top-of-hour minutes (especially :00) are the most
+# contended and most often dropped, so we dodge them to miss fewer ticks.
 on:
   schedule:
-    - cron: "*/5 5-9 * * 0,1,2,3,4"
+    - cron: "2-59/5 5-9 * * 0,1,2,3,4"
   workflow_dispatch: {} # lets you trigger a test run manually from the Actions tab
 
 # Avoid overlapping runs if one is slow.

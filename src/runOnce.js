@@ -46,6 +46,11 @@ async function main() {
   const config = await loadConfig();
   const state = await loadState();
 
+  // Log which symbols this run is actually watching, so the Actions log makes
+  // it obvious whether the PRICE_WATCH secret is the watchlist you expect.
+  const watched = (config.priceWatch || []).map((w) => w.symbol).join(", ") || "(none)";
+  console.log(`Watching ${(config.priceWatch || []).length} symbol(s): ${watched}`);
+
   const market = await fetchMarket(config);
   const alerts = evaluate(config, market, state);
 
